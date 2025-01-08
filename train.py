@@ -8,7 +8,6 @@ from mtad_gat import MTAD_GAT
 from prediction import Predictor
 from training import Trainer
 
-
 if __name__ == "__main__":
 
     id = datetime.now().strftime("%d%m%Y_%H%M%S")
@@ -39,9 +38,14 @@ if __name__ == "__main__":
     elif dataset in ['MSL', 'SMAP']:
         output_path = f'output/{dataset}'
         (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
+    elif dataset == 'MYDATA':
+        output_path = f'output/MYDATA'
+        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("MYDATA", normalize=normalize)
     else:
         raise Exception(f'Dataset "{dataset}" not available.')
 
+    print(f"Training data shape: {x_train.shape}, Test data shape: {x_test.shape}")
+    print(f"Number of features: {x_train.shape[1]}, Window size: {window_size}")
     log_dir = f'{output_path}/logs'
     if not os.path.exists(output_path):
         os.makedirs(output_path)
@@ -70,7 +74,8 @@ if __name__ == "__main__":
     train_loader, val_loader, test_loader = create_data_loaders(
         train_dataset, batch_size, val_split, shuffle_dataset, test_dataset=test_dataset
     )
-
+    print(
+        f"Training batches: {len(train_loader)}, Validation batches: {len(val_loader)}, Test batches: {len(test_loader)}")
     model = MTAD_GAT(
         n_features,
         window_size,
@@ -113,11 +118,13 @@ if __name__ == "__main__":
     )
 
     trainer.fit(train_loader, val_loader)
-
+    print("Starting training...")
     plot_losses(trainer.losses, save_path=save_path, plot=False)
+    print("Training completed.")
 
     # Check test loss
     test_loss = trainer.evaluate(test_loader)
+    print("Starting evaluation on test data...")
     print(f"Test forecast loss: {test_loss[0]:.5f}")
     print(f"Test reconstruction loss: {test_loss[1]:.5f}")
     print(f"Test total loss: {test_loss[2]:.5f}")
@@ -128,7 +135,8 @@ if __name__ == "__main__":
         "MSL": (0.90, 0.001),
         "SMD-1": (0.9950, 0.001),
         "SMD-2": (0.9925, 0.001),
-        "SMD-3": (0.9999, 0.001)
+        "SMD-3": (0.9999, 0.001),
+        "MYDATA": (0.95, 0.001)  # Beispielwerte für deinen Datensatz
     }
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level, q = level_q_dict[key]
@@ -138,7 +146,7 @@ if __name__ == "__main__":
         q = args.q
 
     # Some suggestions for Epsilon args
-    reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1}
+    reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1, "MYDATA": 0}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     reg_level = reg_level_dict[key]
 

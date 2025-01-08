@@ -3,7 +3,7 @@ from csv import reader
 from os import listdir, makedirs, path
 from pickle import dump
 import numpy as np
-
+import pandas as pd
 from args import get_parser
 
 
@@ -20,7 +20,7 @@ def load_and_save(category, filename, dataset, dataset_folder, output_folder):
 
 def load_data(dataset):
     """ Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly) """
-
+    dataset = "MYDATA"
     if dataset == "SMD":
         dataset_folder = "datasets/ServerMachineDataset"
         output_folder = "datasets/ServerMachineDataset/processed"
@@ -65,7 +65,7 @@ def load_data(dataset):
             length = int(row[-1])
             label = np.zeros([length], dtype=np.bool_)
             for anomaly in anomalies:
-                label[anomaly[0] : anomaly[1] + 1] = True
+                label[anomaly[0]: anomaly[1] + 1] = True
             labels.extend(label)
 
         labels = np.asarray(labels)
@@ -73,6 +73,37 @@ def load_data(dataset):
 
         with open(path.join(output_folder, dataset + "_" + "test_label" + ".pkl"), "wb") as file:
             dump(labels, file)
+    elif dataset == "MYDATA":
+        print("MYDATA wird verarbeitet.")
+        dataset_folder = "datasets/MYDATA"
+        output_folder = "datasets/MYDATA/processed"
+        makedirs(output_folder, exist_ok=True)
+
+        # Lade die CSV-Datei
+        data = pd.read_csv(path.join(dataset_folder, "data_numeric_iterpolate.csv"))
+        print("Dataset:", dataset)
+        print("Output-Folder:", output_folder)
+        print("CSV-Datei gefunden:", path.exists(path.join(dataset_folder, "data_numeric_iterpolate.csv")))
+
+        # Zeitstempel extrahieren
+        timestamps = data["timestamp"]  # Passe den Spaltennamen an, falls anders
+        print(timestamps.head())
+        data_numeric = data.drop(columns=["timestamp"], errors="ignore")  # Numerische Daten ohne Zeitstempel
+
+        # Speichere als train und test (falls nur ein Datensatz vorhanden ist, splitte ihn)
+        split_point = int(len(data_numeric) * 0.8)  # 80% Training, 20% Test
+        train_data = data_numeric.iloc[:split_point]
+        test_data = data_numeric.iloc[split_point:]
+        timestamps_train = timestamps.iloc[:split_point]
+        timestamps_test = timestamps.iloc[split_point:]
+        print(train_data.head())
+        print(test_data.head())
+        # Speichere als `.pkl`
+        train_data.to_pickle(path.join(output_folder, "MYDATA_train.pkl"))
+        test_data.to_pickle(path.join(output_folder, "MYDATA_test.pkl"))
+        timestamps_train.to_pickle(path.join(output_folder, "MYDATA_timestamps_train.pkl"))
+        timestamps_test.to_pickle(path.join(output_folder, "MYDATA_timestamps_test.pkl"))
+        print("Daten wurden erfolgreich als .pkl gespeichert.")
 
         def concatenate_and_save(category):
             data = []

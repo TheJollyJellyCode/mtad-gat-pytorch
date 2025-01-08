@@ -33,6 +33,9 @@ def get_data_dim(dataset):
         return 55
     elif str(dataset).startswith("machine"):
         return 38
+    elif dataset == "MYDATA":
+        # Passe die Anzahl der Features deines Datensatzes an
+        return 14  # Beispiel: 15 Features
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -49,6 +52,8 @@ def get_target_dims(dataset):
         return [0]
     elif dataset == "SMD":
         return None
+    elif dataset == "MYDATA":
+        return None  # Beispiel: Alle Features modellieren
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -66,6 +71,9 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
         prefix += "/ServerMachineDataset/processed"
     elif dataset in ["MSL", "SMAP"]:
         prefix += "/data/processed"
+    elif dataset == "MYDATA":
+        prefix += "/MYDATA/processed"
+
     if max_train_size is None:
         train_end = None
     else:
@@ -74,16 +82,21 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
         test_end = None
     else:
         test_end = test_start + max_test_size
+
     print("load data of:", dataset)
     print("train: ", train_start, train_end)
     print("test: ", test_start, test_end)
+
     x_dim = get_data_dim(dataset)
     f = open(os.path.join(prefix, dataset + "_train.pkl"), "rb")
-    train_data = pickle.load(f).reshape((-1, x_dim))[train_start:train_end, :]
+    # train_data = pickle.load(f).reshape((-1, x_dim))[train_start:train_end, :]
+    train_data = pickle.load(f).values.reshape((-1, x_dim))[train_start:train_end, :]
+
     f.close()
     try:
         f = open(os.path.join(prefix, dataset + "_test.pkl"), "rb")
-        test_data = pickle.load(f).reshape((-1, x_dim))[test_start:test_end, :]
+        # test_data = pickle.load(f).reshape((-1, x_dim))[test_start:test_end, :]
+        test_data = pickle.load(f).values.reshape((-1, x_dim))[test_start:test_end, :]
         f.close()
     except (KeyError, FileNotFoundError):
         test_data = None
@@ -94,6 +107,19 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     except (KeyError, FileNotFoundError):
         test_label = None
 
+    # Lade Zeitstempel
+    try:
+        f = open(os.path.join(prefix, dataset + "_timestamps_train.pkl"), "rb")
+        timestamps_train = pickle.load(f)
+        f.close()
+
+        f = open(os.path.join(prefix, dataset + "_timestamps_test.pkl"), "rb")
+        timestamps_test = pickle.load(f)
+        f.close()
+    except (KeyError, FileNotFoundError):
+        timestamps_train = None
+        timestamps_test = None
+
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
         test_data, _ = normalize_data(test_data, scaler=scaler)
@@ -101,7 +127,7 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     print("train set shape: ", train_data.shape)
     print("test set shape: ", test_data.shape)
     print("test set label shape: ", None if test_label is None else test_label.shape)
-    return (train_data, None), (test_data, test_label)
+    return (train_data, timestamps_train), (test_data, timestamps_test, test_label)
 
 
 class SlidingWindowDataset(Dataset):
@@ -112,8 +138,8 @@ class SlidingWindowDataset(Dataset):
         self.horizon = horizon
 
     def __getitem__(self, index):
-        x = self.data[index : index + self.window]
-        y = self.data[index + self.window : index + self.window + self.horizon]
+        x = self.data[index: index + self.window]
+        y = self.data[index + self.window: index + self.window + self.horizon]
         return x, y
 
     def __len__(self):
@@ -236,8 +262,8 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     sep_cuma = np.cumsum(md['num_values'].values) - lookback
     sep_cuma = sep_cuma[:-1]
     buffer = np.arange(1, 20)
-    i_remov = np.sort(np.concatenate((sep_cuma, np.array([i+buffer for i in sep_cuma]).flatten(),
-                                      np.array([i-buffer for i in sep_cuma]).flatten())))
+    i_remov = np.sort(np.concatenate((sep_cuma, np.array([i + buffer for i in sep_cuma]).flatten(),
+                                      np.array([i - buffer for i in sep_cuma]).flatten())))
     i_remov = i_remov[(i_remov < len(adjusted_scores)) & (i_remov >= 0)]
     i_remov = np.sort(np.unique(i_remov))
     if len(i_remov) != 0:
@@ -246,10 +272,10 @@ def adjust_anomaly_scores(scores, dataset, is_train, lookback):
     # Normalize each concatenated part individually
     sep_cuma = np.cumsum(md['num_values'].values) - lookback
     s = [0] + sep_cuma.tolist()
-    for c_start, c_end in [(s[i], s[i+1]) for i in range(len(s)-1)]:
-        e_s = adjusted_scores[c_start: c_end+1]
+    for c_start, c_end in [(s[i], s[i + 1]) for i in range(len(s) - 1)]:
+        e_s = adjusted_scores[c_start: c_end + 1]
 
-        e_s = (e_s - np.min(e_s))/(np.max(e_s) - np.min(e_s))
-        adjusted_scores[c_start: c_end+1] = e_s
+        e_s = (e_s - np.min(e_s)) / (np.max(e_s) - np.min(e_s))
+        adjusted_scores[c_start: c_end + 1] = e_s
 
     return adjusted_scores
