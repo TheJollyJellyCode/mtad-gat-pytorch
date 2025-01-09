@@ -81,6 +81,7 @@ class Plotter:
                 pot_result = result_dict["pot_result"]
                 bf_results = result_dict["bf_result"]
                 print(f'Epsilon:')
+                print(result_dict)
                 print(f'\t\tprecision: {epsilon_result["precision"]:.2f}, recall: {epsilon_result["recall"]:.2f}, F1: {epsilon_result["f1"]:.2f}')
                 print(f'POT:')
                 print(f'\t\tprecision: {pot_result["precision"]:.2f}, recall: {pot_result["recall"]:.2f}, F1: {pot_result["f1"]:.2f}')
