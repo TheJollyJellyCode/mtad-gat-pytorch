@@ -80,10 +80,10 @@ def load_data(dataset):
         makedirs(output_folder, exist_ok=True)
 
         # Lade die CSV-Datei
-        data = pd.read_csv(path.join(dataset_folder, "data_numeric_iterpolate.csv"))
+        data = pd.read_csv(path.join(dataset_folder, "daten_standard.csv"))
         print("Dataset:", dataset)
         print("Output-Folder:", output_folder)
-        print("CSV-Datei gefunden:", path.exists(path.join(dataset_folder, "data_numeric_iterpolate.csv")))
+        print("CSV-Datei gefunden:", path.exists(path.join(dataset_folder, "daten_standard.csv")))
 
         # Zeitstempel extrahieren
         timestamps = data["timestamp"]  # Passe den Spaltennamen an, falls anders
