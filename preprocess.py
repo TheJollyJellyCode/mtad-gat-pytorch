@@ -4,6 +4,7 @@ from os import listdir, makedirs, path
 from pickle import dump
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 from args import get_parser
 
 
@@ -18,9 +19,97 @@ def load_and_save(category, filename, dataset, dataset_folder, output_folder):
         dump(temp, file)
 
 
+def process_individual_and_continue(dataset_folder):
+    """
+    Verarbeitet einen INDIVIDUAL-Datensatz: Listet Spalten auf, ermöglicht Auswahl,
+    normalisiert ausgewählte Spalten und führt danach den Standard-Workflow aus.
+    """
+    individual_dir = path.join(dataset_folder, "INDIVIDUAL")
+    if not path.exists(individual_dir):
+        raise ValueError(f"Der Ordner {individual_dir} existiert nicht!")
+
+    # Erstellen eines neuen individuellen Ordners
+    existing_folders = [f for f in listdir(dataset_folder) if f.startswith('INDIVIDUAL') and path.isdir(path.join(dataset_folder, f))]
+    next_index = len(existing_folders)  # Startet bei 0, falls keine vorhanden sind
+    next_individual_dir = path.join(dataset_folder, f"INDIVIDUAL{next_index}")
+    makedirs(next_individual_dir, exist_ok=True)
+    output_folder = path.join(next_individual_dir, "processed")
+    makedirs(output_folder, exist_ok=True)
+
+    print("Vorhandene Dateien im Ordner INDIVIDUAL:")
+    files = [f for f in listdir(individual_dir) if f.endswith('.csv')]
+    for idx, file in enumerate(files):
+        print(f"{idx + 1}: {file}")
+
+    file_choice = int(input("Wählen Sie eine Datei (Nummer): ")) - 1
+    if file_choice < 0 or file_choice >= len(files):
+        raise ValueError("Ungültige Auswahl!")
+
+    chosen_file = files[file_choice]
+    input_file_path = path.join(individual_dir, chosen_file)
+
+    data = pd.read_csv(input_file_path)
+    print("\nVerfügbare Spalten:")
+    for idx, column in enumerate(data.columns):
+        print(f"{idx + 1}: {column}")
+
+    selected_columns = input("Geben Sie die Nummern der zu behaltenden Spalten ein (z.B. 1,2,5): ")
+    selected_indices = [int(x.strip()) - 1 for x in selected_columns.split(",")]
+
+    columns_to_keep = [data.columns[idx] for idx in selected_indices]
+    if "timestamp" not in columns_to_keep:
+        columns_to_keep.insert(0, "timestamp")  # Timestamp sicherstellen
+
+    reduced_data = data[columns_to_keep]
+
+    # Initialisieren des Scalers
+    scaler = MinMaxScaler()
+
+    columns_to_normalize = [col for col in columns_to_keep if col != "timestamp"]
+    normalized_data = scaler.fit_transform(reduced_data[columns_to_normalize])
+
+    normalized_df = pd.DataFrame(normalized_data, columns=columns_to_normalize)
+    normalized_df["timestamp"] = reduced_data["timestamp"].values
+
+    # Speichern der normalisierten Daten und der Parameter
+    normalized_data_path = path.join(output_folder, "INDIVIDUAL_normalized_data.csv")
+    params_path = path.join(output_folder, "INDIVIDUAL_normalization_params.csv")
+    normalized_df.to_csv(normalized_data_path, index=False)
+
+    params = pd.DataFrame({
+        'feature': columns_to_normalize,
+        'min': scaler.data_min_,
+        'max': scaler.data_max_
+    })
+    params.to_csv(params_path, index=False)
+
+    print(f"Normalisierte Daten gespeichert unter: {normalized_data_path}")
+    print(f"Normalisierungsparameter gespeichert unter: {params_path}")
+
+    # Weiter mit dem Standard-Workflow
+    print("Führe den Standard-Workflow für INDIVIDUAL fort...")
+
+    # Zeitstempel und Train/Test-Split
+    timestamps = normalized_df["timestamp"]
+    normalized_df = normalized_df.drop(columns=["timestamp"], errors="ignore")
+
+    split_point = int(len(normalized_df) * 0.8)
+    train_data = normalized_df.iloc[:split_point]
+    test_data = normalized_df.iloc[split_point:]
+    timestamps_train = timestamps.iloc[:split_point]
+    timestamps_test = timestamps.iloc[split_point:]
+
+    # Speichere als `.pkl`
+    train_data.to_pickle(path.join(output_folder, "INDIVIDUAL_train.pkl"))
+    test_data.to_pickle(path.join(output_folder, "INDIVIDUAL_test.pkl"))
+    timestamps_train.to_pickle(path.join(output_folder, "INDIVIDUAL_timestamps_train.pkl"))
+    timestamps_test.to_pickle(path.join(output_folder, "INDIVIDUAL_timestamps_test.pkl"))
+
+    print("INDIVIDUAL-Datensatz erfolgreich verarbeitet und gespeichert.")
+
+
 def load_data(dataset):
     """ Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly) """
-    dataset = "MYDATA"
     if dataset == "SMD":
         dataset_folder = "datasets/ServerMachineDataset"
         output_folder = "datasets/ServerMachineDataset/processed"
@@ -73,51 +162,30 @@ def load_data(dataset):
 
         with open(path.join(output_folder, dataset + "_" + "test_label" + ".pkl"), "wb") as file:
             dump(labels, file)
+
     elif dataset == "MYDATA":
-        print("MYDATA wird verarbeitet.")
         dataset_folder = "datasets/MYDATA"
         output_folder = "datasets/MYDATA/processed"
         makedirs(output_folder, exist_ok=True)
-
-        # Lade die CSV-Datei
         data = pd.read_csv(path.join(dataset_folder, "daten_standard.csv"))
-        print("Dataset:", dataset)
-        print("Output-Folder:", output_folder)
-        print("CSV-Datei gefunden:", path.exists(path.join(dataset_folder, "daten_standard.csv")))
 
-        # Zeitstempel extrahieren
-        timestamps = data["timestamp"]  # Passe den Spaltennamen an, falls anders
-        print(timestamps.head())
-        data_numeric = data.drop(columns=["timestamp"], errors="ignore")  # Numerische Daten ohne Zeitstempel
+        timestamps = data["timestamp"]
+        data_numeric = data.drop(columns=["timestamp"], errors="ignore")
 
-        # Speichere als train und test (falls nur ein Datensatz vorhanden ist, splitte ihn)
-        split_point = int(len(data_numeric) * 0.8)  # 80% Training, 20% Test
+        split_point = int(len(data_numeric) * 0.8)
         train_data = data_numeric.iloc[:split_point]
         test_data = data_numeric.iloc[split_point:]
         timestamps_train = timestamps.iloc[:split_point]
         timestamps_test = timestamps.iloc[split_point:]
-        print(train_data.head())
-        print(test_data.head())
-        # Speichere als `.pkl`
+
         train_data.to_pickle(path.join(output_folder, "MYDATA_train.pkl"))
         test_data.to_pickle(path.join(output_folder, "MYDATA_test.pkl"))
         timestamps_train.to_pickle(path.join(output_folder, "MYDATA_timestamps_train.pkl"))
         timestamps_test.to_pickle(path.join(output_folder, "MYDATA_timestamps_test.pkl"))
-        print("Daten wurden erfolgreich als .pkl gespeichert.")
 
-        def concatenate_and_save(category):
-            data = []
-            for row in data_info:
-                filename = row[0]
-                temp = np.load(path.join(dataset_folder, category, filename + ".npy"))
-                data.extend(temp)
-            data = np.asarray(data)
-            print(dataset, category, data.shape)
-            with open(path.join(output_folder, dataset + "_" + category + ".pkl"), "wb") as file:
-                dump(data, file)
-
-        for c in ["train", "test"]:
-            concatenate_and_save(c)
+    elif dataset == "INDIVIDUAL":
+        dataset_folder = "datasets"
+        process_individual_and_continue(dataset_folder)
 
 
 if __name__ == "__main__":
