@@ -61,19 +61,35 @@ def get_target_dims(dataset):
 def get_data(dataset, max_train_size=None, max_test_size=None,
              normalize=False, spec_res=False, train_start=0, test_start=0):
     """
-    Get data from pkl files
+    Get data from pkl files.
 
-    return shape: (([train_size, x_dim], [train_size] or None), ([test_size, x_dim], [test_size]))
-    Method from OmniAnomaly (https://github.com/NetManAIOps/OmniAnomaly)
+    Parameters:
+        dataset (str): Name of the dataset (e.g., SMD, MYDATA, INDIVIDUAL0, INDIVIDUAL1, etc.).
+        max_train_size (int, optional): Maximum number of training samples. Defaults to None.
+        max_test_size (int, optional): Maximum number of testing samples. Defaults to None.
+        normalize (bool, optional): Whether to normalize the data. Defaults to False.
+        spec_res (bool, optional): Specific resolution flag (not used). Defaults to False.
+        train_start (int, optional): Start index for training data. Defaults to 0.
+        test_start (int, optional): Start index for testing data. Defaults to 0.
+
+    Returns:
+        tuple: ((train_data, timestamps_train), (test_data, timestamps_test, test_label))
     """
     prefix = "datasets"
+
+    # Set the correct prefix for each dataset
     if str(dataset).startswith("machine"):
         prefix += "/ServerMachineDataset/processed"
     elif dataset in ["MSL", "SMAP"]:
         prefix += "/data/processed"
     elif dataset == "MYDATA":
         prefix += "/MYDATA/processed"
+    elif dataset.startswith("INDIVIDUAL"):
+        prefix += f"/{dataset}/processed"  # Dynamically access INDIVIDUAL folders
+    else:
+        raise ValueError("Unknown dataset: " + str(dataset))
 
+    # Define the train and test end points
     if max_train_size is None:
         train_end = None
     else:
@@ -83,50 +99,56 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     else:
         test_end = test_start + max_test_size
 
-    print("load data of:", dataset)
-    print("train: ", train_start, train_end)
-    print("test: ", test_start, test_end)
+    print(f"Loading data for dataset: {dataset}")
+    print(f"Train range: {train_start} to {train_end}")
+    print(f"Test range: {test_start} to {test_end}")
 
-    x_dim = get_data_dim(dataset)
-    f = open(os.path.join(prefix, dataset + "_train.pkl"), "rb")
-    # train_data = pickle.load(f).reshape((-1, x_dim))[train_start:train_end, :]
-    train_data = pickle.load(f).values.reshape((-1, x_dim))[train_start:train_end, :]
+    x_dim = get_data_dim(dataset)  # Dynamically determine the number of features
 
-    f.close()
+    # Load training data
+    train_data_path = os.path.join(prefix, f"{dataset}_train.pkl")
+    with open(train_data_path, "rb") as f:
+        train_data = pickle.load(f).values.reshape((-1, x_dim))[train_start:train_end, :]
+
+    # Load testing data
     try:
-        f = open(os.path.join(prefix, dataset + "_test.pkl"), "rb")
-        # test_data = pickle.load(f).reshape((-1, x_dim))[test_start:test_end, :]
-        test_data = pickle.load(f).values.reshape((-1, x_dim))[test_start:test_end, :]
-        f.close()
+        test_data_path = os.path.join(prefix, f"{dataset}_test.pkl")
+        with open(test_data_path, "rb") as f:
+            test_data = pickle.load(f).values.reshape((-1, x_dim))[test_start:test_end, :]
     except (KeyError, FileNotFoundError):
         test_data = None
+
+    # Load test labels
     try:
-        f = open(os.path.join(prefix, dataset + "_test_label.pkl"), "rb")
-        test_label = pickle.load(f).reshape((-1))[test_start:test_end]
-        f.close()
+        test_label_path = os.path.join(prefix, f"{dataset}_test_label.pkl")
+        with open(test_label_path, "rb") as f:
+            test_label = pickle.load(f).reshape((-1))[test_start:test_end]
     except (KeyError, FileNotFoundError):
         test_label = None
 
-    # Lade Zeitstempel
+    # Load timestamps for training and testing
     try:
-        f = open(os.path.join(prefix, dataset + "_timestamps_train.pkl"), "rb")
-        timestamps_train = pickle.load(f)
-        f.close()
+        timestamps_train_path = os.path.join(prefix, f"{dataset}_timestamps_train.pkl")
+        with open(timestamps_train_path, "rb") as f:
+            timestamps_train = pickle.load(f)
 
-        f = open(os.path.join(prefix, dataset + "_timestamps_test.pkl"), "rb")
-        timestamps_test = pickle.load(f)
-        f.close()
+        timestamps_test_path = os.path.join(prefix, f"{dataset}_timestamps_test.pkl")
+        with open(timestamps_test_path, "rb") as f:
+            timestamps_test = pickle.load(f)
     except (KeyError, FileNotFoundError):
         timestamps_train = None
         timestamps_test = None
 
+    # Normalize data if specified
     if normalize:
         train_data, scaler = normalize_data(train_data, scaler=None)
         test_data, _ = normalize_data(test_data, scaler=scaler)
 
-    print("train set shape: ", train_data.shape)
-    print("test set shape: ", test_data.shape)
-    print("test set label shape: ", None if test_label is None else test_label.shape)
+    # Print shapes of the data for debugging
+    print("Train set shape: ", train_data.shape)
+    print("Test set shape: ", test_data.shape if test_data is not None else "None")
+    print("Test set label shape: ", None if test_label is None else test_label.shape)
+
     return (train_data, timestamps_train), (test_data, timestamps_test, test_label)
 
 

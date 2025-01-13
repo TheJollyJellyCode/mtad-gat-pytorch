@@ -125,8 +125,9 @@ class ForecastAnalysis:
 
 if __name__ == "__main__":
     file_path = "/plots/l96_e10_bs32/data.csv"
-    output_dir = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/plots"
-    pkl_file = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/output/MYDATA/08012025_152453/test_output.pkl"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(base_dir, "plots")
+    pkl_file = os.path.join(base_dir, "output/MYDATA/08012025_152453/test_output.pkl")
     # Datei öffnen und als DataFrame laden
     # with open(pkl_file, "rb") as file:
     #     df = pickle.load(file)
