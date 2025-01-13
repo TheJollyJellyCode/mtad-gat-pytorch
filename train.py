@@ -41,11 +41,14 @@ if __name__ == "__main__":
     elif dataset == 'MYDATA':
         output_path = f'output/MYDATA'
         (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("MYDATA", normalize=normalize)
-    elif dataset == 'INDIVIDUAL':
-        if individual_index is None:
-            raise ValueError("Bitte geben Sie den individuellen Index für den INDIVIDUAL-Datensatz an (z. B. INDIVIDUAL0).")
-        output_path = f'output/INDIVIDUAL{individual_index}'
-        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data(f"INDIVIDUAL{individual_index}", normalize=normalize)
+    elif dataset.startswith('INDIVIDUAL'):
+        try:
+            individual_index = int(dataset.replace('INDIVIDUAL', ''))  # Extrahiere den Index
+        except ValueError:
+            raise ValueError("Dataset-Parameter für INDIVIDUAL muss im Format 'INDIVIDUALx' sein, z.B. 'INDIVIDUAL0'.")
+        dataset_name = f"INDIVIDUAL{individual_index}"
+        output_path = f'output/{dataset_name}'
+        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data(dataset_name, normalize=normalize)
     else:
         raise Exception(f'Dataset "{dataset}" not available.')
 
