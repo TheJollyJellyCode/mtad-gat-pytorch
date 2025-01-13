@@ -35,7 +35,16 @@ def get_data_dim(dataset):
         return 38
     elif dataset == "MYDATA":
         # Passe die Anzahl der Features deines Datensatzes an
-        return 14  # Beispiel: 15 Features
+        return 14
+    elif dataset.startswith("INDIVIDUAL"):
+        # Dynamische Handhabung von INDIVIDUAL-Datasets
+        individual_dimensions = {
+            "INDIVIDUAL1": 5,
+            "INDIVIDUAL2": 4,
+            "INDIVIDUAL3": 4,
+            "INDIVIDUAL4": 3,
+        }
+        return individual_dimensions.get(dataset, 14)  # Standardmäßig 14 Features, falls nicht definiert
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -54,6 +63,8 @@ def get_target_dims(dataset):
         return None
     elif dataset == "MYDATA":
         return None  # Beispiel: Alle Features modellieren
+    elif str(dataset).startswith("INDIVIDUAL"):
+        return None
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -79,13 +90,13 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
 
     # Set the correct prefix for each dataset
     if str(dataset).startswith("machine"):
-        prefix += "/ServerMachineDataset/processed"
+        prefix = os.path.join(prefix, "ServerMachineDataset", "processed")
     elif dataset in ["MSL", "SMAP"]:
-        prefix += "/data/processed"
+        prefix = os.path.join(prefix, "data", "processed")
     elif dataset == "MYDATA":
-        prefix += "/MYDATA/processed"
+        prefix = os.path.join(prefix, "MYDATA", "processed")
     elif dataset.startswith("INDIVIDUAL"):
-        prefix += f"/{dataset}/processed"  # Dynamically access INDIVIDUAL folders
+        prefix = os.path.join(prefix, dataset, "processed")  # Dynamically access INDIVIDUAL folders
     else:
         raise ValueError("Unknown dataset: " + str(dataset))
 
@@ -150,7 +161,6 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     print("Test set label shape: ", None if test_label is None else test_label.shape)
 
     return (train_data, timestamps_train), (test_data, timestamps_test, test_label)
-
 
 class SlidingWindowDataset(Dataset):
     def __init__(self, data, window, target_dim=None, horizon=1):
