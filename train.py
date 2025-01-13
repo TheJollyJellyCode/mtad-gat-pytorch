@@ -27,7 +27,6 @@ if __name__ == "__main__":
     use_cuda = args.use_cuda
     print_every = args.print_every
     log_tensorboard = args.log_tensorboard
-    individual_index = args.individual_index  # Neuer Parameter für INDIVIDUAL-Index
     args_summary = str(args.__dict__)
     print(args_summary)
 
