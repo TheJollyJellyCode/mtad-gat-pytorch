@@ -28,6 +28,8 @@ if __name__ == "__main__":
     use_cuda = args.use_cuda
     print_every = args.print_every
     log_tensorboard = args.log_tensorboard
+    group_index = args.group[0]
+    index = args.group[2:]
     args_summary = str(args.__dict__)
     print(args_summary)
 
@@ -187,6 +189,14 @@ if __name__ == "__main__":
 
     label = y_test[window_size:] if y_test is not None else None
     predictor.predict_anomalies(x_train, x_test, label)
+
+    # Ergebnisse speichern
+    results_path = os.path.join(save_path, "forecast_results.csv")
+    if hasattr(predictor, 'scores'):
+        np.savetxt(results_path, predictor.scores, delimiter=",")
+        print(f"Forecasting-Ergebnisse gespeichert unter: {results_path}")
+    else:
+        print("Warnung: Keine Forecasting-Ergebnisse vorhanden. Überprüfen Sie den Workflow.")
 
     # Speichern der Konfiguration
     args_path = os.path.join(save_path, "config.txt")

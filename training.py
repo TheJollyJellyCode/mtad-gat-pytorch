@@ -7,44 +7,26 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 class Trainer:
-    """Trainer class for MTAD-GAT model.
-
-    :param model: MTAD-GAT model
-    :param optimizer: Optimizer used to minimize the loss function
-    :param window_size: Length of the input sequence
-    :param n_features: Number of input features
-    :param target_dims: dimension of input features to forecast and reconstruct
-    :param n_epochs: Number of iterations/epochs
-    :param batch_size: Number of windows in a single batch
-    :param init_lr: Initial learning rate of the module
-    :param forecast_criterion: Loss to be used for forecasting.
-    :param recon_criterion: Loss to be used for reconstruction.
-    :param boolean use_cuda: To be run on GPU or not
-    :param dload: Download directory where models are to be dumped
-    :param log_dir: Directory where SummaryWriter logs are written to
-    :param print_every: At what epoch interval to print losses
-    :param log_tensorboard: Whether to log loss++ to tensorboard
-    :param args_summary: Summary of args that will also be written to tensorboard if log_tensorboard
-    """
+    """Trainer class for MTAD-GAT model."""
 
     def __init__(
-        self,
-        model,
-        optimizer,
-        window_size,
-        n_features,
-        target_dims=None,
-        n_epochs=200,
-        batch_size=256,
-        init_lr=0.001,
-        forecast_criterion=nn.MSELoss(),
-        recon_criterion=nn.MSELoss(),
-        use_cuda=True,
-        dload="",
-        log_dir="output/",
-        print_every=1,
-        log_tensorboard=True,
-        args_summary="",
+            self,
+            model,
+            optimizer,
+            window_size,
+            n_features,
+            target_dims=None,
+            n_epochs=200,
+            batch_size=256,
+            init_lr=0.001,
+            forecast_criterion=nn.MSELoss(),
+            recon_criterion=nn.MSELoss(),
+            use_cuda=True,
+            dload="",
+            log_dir="output/",
+            print_every=1,
+            log_tensorboard=True,
+            args_summary="",
     ):
 
         self.model = model
@@ -81,19 +63,18 @@ class Trainer:
             self.writer.add_text("args_summary", args_summary)
 
     def fit(self, train_loader, val_loader=None):
-        """Train model for self.n_epochs.
-        Train and validation (if validation loader given) losses stored in self.losses
-
-        :param train_loader: train loader of input data
-        :param val_loader: validation loader of input data
-        """
-
+        """Train model for self.n_epochs."""
         init_train_loss = self.evaluate(train_loader)
-        print(f"Init total train loss: {init_train_loss[2]:5f}")
+        print(f"Init total train loss: {init_train_loss[2]:.5f}")
+
+        if self.log_tensorboard:
+            self.writer.add_scalar("init_train_loss", init_train_loss[2], 0)
 
         if val_loader is not None:
             init_val_loss = self.evaluate(val_loader)
             print(f"Init total val loss: {init_val_loss[2]:.5f}")
+            if self.log_tensorboard:
+                self.writer.add_scalar("init_val_loss", init_val_loss[2], 0)
 
         print(f"Training model for {self.n_epochs} epochs..")
         train_start = time.time()
@@ -129,12 +110,8 @@ class Trainer:
                 forecast_b_losses.append(forecast_loss.item())
                 recon_b_losses.append(recon_loss.item())
 
-            forecast_b_losses = np.array(forecast_b_losses)
-            recon_b_losses = np.array(recon_b_losses)
-
-            forecast_epoch_loss = np.sqrt((forecast_b_losses ** 2).mean())
-            recon_epoch_loss = np.sqrt((recon_b_losses ** 2).mean())
-
+            forecast_epoch_loss = np.sqrt((np.array(forecast_b_losses) ** 2).mean())
+            recon_epoch_loss = np.sqrt((np.array(recon_b_losses) ** 2).mean())
             total_epoch_loss = forecast_epoch_loss + recon_epoch_loss
 
             self.losses["train_forecast"].append(forecast_epoch_loss)
@@ -149,7 +126,7 @@ class Trainer:
                 self.losses["val_recon"].append(recon_val_loss)
                 self.losses["val_total"].append(total_val_loss)
 
-                if total_val_loss <= self.losses["val_total"][-1]:
+                if total_val_loss <= min(self.losses["val_total"], default=float('inf')):
                     self.save(f"model.pt")
 
             if self.log_tensorboard:
@@ -182,15 +159,11 @@ class Trainer:
         train_time = int(time.time() - train_start)
         if self.log_tensorboard:
             self.writer.add_text("total_train_time", str(train_time))
+            self.writer.close()
         print(f"-- Training done in {train_time}s.")
 
     def evaluate(self, data_loader):
-        """Evaluate model
-
-        :param data_loader: data loader of input data
-        :return forecasting loss, reconstruction loss, total loss
-        """
-
+        """Evaluate model."""
         self.model.eval()
 
         forecast_losses = []
@@ -229,25 +202,17 @@ class Trainer:
         return forecast_loss, recon_loss, total_loss
 
     def save(self, file_name):
-        """
-        Pickles the model parameters to be retrieved later
-        :param file_name: the filename to be saved as,`dload` serves as the download directory
-        """
-        PATH = self.dload + "/" + file_name
-        if os.path.exists(self.dload):
-            pass
-        else:
-            os.mkdir(self.dload)
+        """Save the model parameters."""
+        PATH = os.path.join(self.dload, file_name)
+        os.makedirs(self.dload, exist_ok=True)
         torch.save(self.model.state_dict(), PATH)
 
     def load(self, PATH):
-        """
-        Loads the model's parameters from the path mentioned
-        :param PATH: Should contain pickle file
-        """
+        """Load the model parameters."""
         self.model.load_state_dict(torch.load(PATH, map_location=self.device))
 
     def write_loss(self, epoch):
+        """Write the losses to TensorBoard."""
         for key, value in self.losses.items():
             if len(value) != 0:
-                self.writer.add_scalar(key, value[-1], epoch)
+                self.writer.add_scalar(f"Loss/{key}", value[-1], epoch)
