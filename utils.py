@@ -37,7 +37,9 @@ def get_data_dim(dataset):
         # Passe die Anzahl der Features deines Datensatzes an
         return 14  # Beispiel: 15 Features
     elif dataset == "INDIVIDUAL1" : return 5
-    elif dataset == ("INDIVIDUAL2" or "INDIVIDUAL3"):  return 4
+    elif dataset == "INDIVIDUAL2":  return 4
+    elif dataset == "INDIVIDUAL3":
+        return 4
     elif dataset == "INDIVIDUAL4": return 3
     else:
         raise ValueError("unknown dataset " + str(dataset))
