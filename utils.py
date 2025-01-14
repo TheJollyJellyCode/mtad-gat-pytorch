@@ -36,6 +36,9 @@ def get_data_dim(dataset):
     elif dataset == "MYDATA":
         # Passe die Anzahl der Features deines Datensatzes an
         return 14  # Beispiel: 15 Features
+    elif dataset == "INDIVIDUAL1" : return 5
+    elif dataset == ("INDIVIDUAL2" or "INDIVIDUAL3"):  return 4
+    elif dataset == "INDIVIDUAL4": return 3
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -52,10 +55,9 @@ def get_target_dims(dataset):
         return [0]
     elif dataset == "SMD":
         return None
-    elif dataset == "MYDATA":
-        return None  # Beispiel: Alle Features modellieren
     else:
-        raise ValueError("unknown dataset " + str(dataset))
+        return None  # Beispiel: Alle Features modellieren
+
 
 
 def get_data(dataset, max_train_size=None, max_test_size=None,
@@ -73,6 +75,14 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
         prefix += "/data/processed"
     elif dataset == "MYDATA":
         prefix += "/MYDATA/processed"
+    elif dataset == "INDIVIDUAL1" :
+        prefix += "/INDIVIDUAL1/processed"
+    elif dataset == "INDIVIDUAL2":
+        prefix += "/INDIVIDUAL2/processed"
+    elif dataset == "INDIVIDUAL3":
+        prefix += "/INDIVIDUAL3/processed"
+    elif dataset == "INDIVIDUAL4" :
+        prefix += "/INDIVIDUAL4/processed"
 
     if max_train_size is None:
         train_end = None
