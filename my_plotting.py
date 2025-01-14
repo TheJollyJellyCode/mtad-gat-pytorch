@@ -30,6 +30,25 @@ class ForecastAnalysis:
         except Exception as e:
             print(f"Fehler beim Laden der CSV-Datei: {e}")
 
+    def destandardize_forecasts(self, standardization_params_file):
+        # Einlesen der Standardisierungsparameter aus der CSV-Datei
+        params = pd.read_csv(standardization_params_file)
+
+        # Erstellen eines Dictionaries mit den Min- und Max-Werten
+        min_values = params.set_index('feature')['min'].to_dict()
+        max_values = params.set_index('feature')['max'].to_dict()
+
+        # Iteriere über die Forecast-Spalten und destandardisiere sie
+        forecast_columns = [col for col in self.data.columns if 'Forecast' in col]
+
+        for column in forecast_columns:
+            # Annahme: Die Spaltennamen im DataFrame entsprechen den 'feature'-Namen in der CSV
+            if column in min_values and column in max_values:
+                min_val = min_values[column]
+                max_val = max_values[column]
+                # Destandardisierung der jeweiligen Spalte
+                self.data[column] = self.data[column] * (max_val - min_val) + min_val
+        print(self.data.head())
     def save_forecast_true_csv(self):
         """Speichert Forecast und True Values in einer separaten CSV-Datei."""
         if self.data is None:
@@ -125,8 +144,11 @@ class ForecastAnalysis:
 
 if __name__ == "__main__":
     file_path = "/plots/l96_e10_bs32/data.csv"
-    output_dir = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/plots"
-    pkl_file = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/output/MYDATA/08012025_152453/test_output.pkl"
+    output_dir = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/plots/INDIVIDUAL1/l96_e10_bs32"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    pkl_file = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/output/INDIVIDUAL1/14012025_163726/test_output.pkl"
+    standard_params_file = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/datasets/INDIVIDUAL1/processed/INDIVIDUAL1_normalization_params.csv"
     # Datei öffnen und als DataFrame laden
     # with open(pkl_file, "rb") as file:
     #     df = pickle.load(file)
@@ -137,7 +159,8 @@ if __name__ == "__main__":
     analyser = ForecastAnalysis(pkl_file, output_dir)
     analyser.load_pkl()
     analyser.load_csv()
+    # analyser.destandardize_forecasts(standard_params_file)
     analyser.save_forecast_true_csv()
-    analyser.save_residuals_csv()
-    analyser.plot_forecast_true()
-    analyser.plot_residuals()
+    # analyser.save_residuals_csv()
+    # analyser.plot_forecast_true()
+    # analyser.plot_residuals()
