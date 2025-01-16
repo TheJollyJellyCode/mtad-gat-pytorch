@@ -12,8 +12,8 @@ on:
         required: true
         default: '672'
 jobs:
-  prepare_var:
-    runs-on: [self-hosted, HTWG2] # Verwende den selbst gehosteten Runner mit dem Label HTWG_SERVER
+  mtad-gat:
+    runs-on: [self-hosted, htwg-gat] # Verwende den selbst gehosteten Runner mit dem Label HTWG_SERVER
     timeout-minutes: 1440
     steps:
       # 1. Repository aktualisieren
