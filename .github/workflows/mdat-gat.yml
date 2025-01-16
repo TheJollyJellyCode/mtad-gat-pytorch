@@ -2,15 +2,15 @@ name: mdat-gat
 
 on:
   workflow_dispatch: # Ermöglicht manuelles Auslösen des Workflows
-  inputs:
-    dataset:
-      description: 'Dataset for training'
-      required: true
-      default: 'INDIVIDUAL3'
-    lookback:
-      description: 'Lookback period for training'
-      required: true
-      default: '672'
+    inputs:
+      dataset:
+        description: 'Dataset for training'
+        required: true
+        default: 'INDIVIDUAL3'
+      lookback:
+        description: 'Lookback period for training'
+        required: true
+        default: '672'
 jobs:
   prepare_var:
     runs-on: [self-hosted, HTWG2] # Verwende den selbst gehosteten Runner mit dem Label HTWG_SERVER
