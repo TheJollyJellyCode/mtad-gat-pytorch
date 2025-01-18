@@ -14,7 +14,7 @@ on:
 jobs:
   mtad-gat:
     runs-on: [self-hosted, htwg-gat] # Verwende den selbst gehosteten Runner mit dem Label HTWG_SERVER
-    timeout-minutes: 1440
+    timeout-minutes: 2880
     steps:
       # 1. Repository aktualisieren
       - name: Pull latest changes
