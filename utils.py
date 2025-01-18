@@ -89,7 +89,6 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     elif dataset in ["MSL", "SMAP"]:
         prefix = os.path.join(prefix, "data", "processed")
     elif dataset == "MYDATA":
-
         prefix += "/MYDATA/processed"
     elif dataset == "INDIVIDUAL1" :
         prefix += "/INDIVIDUAL1/processed"
@@ -98,8 +97,8 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     elif dataset == "INDIVIDUAL3":
         prefix += "/INDIVIDUAL3/processed"
     elif dataset == "INDIVIDUAL4" :
+        prefix += "/INDIVIDUAL4/processed"
 
-    # Define the train and test end points
     if max_train_size is None:
         train_end = None
     else:
