@@ -143,7 +143,7 @@ class ForecastAnalysis:
 
 
 if __name__ == "__main__":
-    file_path = "/plots/l96_e10_bs32/data.csv"
+
     output_dir = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/plots/INDIVIDUAL1/l96_e10_bs32"
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)

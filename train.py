@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+import os
 import torch.nn as nn
 
 from args import get_parser
@@ -27,19 +28,18 @@ if __name__ == "__main__":
     use_cuda = args.use_cuda
     print_every = args.print_every
     log_tensorboard = args.log_tensorboard
-    group_index = args.group[0]
-    index = args.group[2:]
     args_summary = str(args.__dict__)
     print(args_summary)
 
+    # Dataset-Spezifikationen
     if dataset == 'SMD':
-        output_path = f'output/SMD/{args.group}'
-        (x_train, _), (x_test, y_test) = get_data(f"machine-{group_index}-{index}", normalize=normalize)
+        output_path = os.path.join('output', 'SMD', args.group)
+        (x_train, _), (x_test, y_test) = get_data(f"machine-{args.group[0]}-{args.group[2:]}", normalize=normalize)
     elif dataset in ['MSL', 'SMAP']:
-        output_path = f'output/{dataset}'
+        output_path = os.path.join('output', dataset)
         (x_train, _), (x_test, y_test) = get_data(dataset, normalize=normalize)
     elif dataset == 'MYDATA':
-        output_path = f'output/MYDATA'
+        output_path = os.path.join('output', 'MYDATA')
         (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("MYDATA", normalize=normalize)
     elif dataset =='INDIVIDUAL1':
         output_path = f'output/INDIVIDUAL1'
@@ -54,21 +54,23 @@ if __name__ == "__main__":
         output_path = f'output/INDIVIDUAL4'
         (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("INDIVIDUAL4", normalize=normalize)
     else:
-        raise Exception(f'Dataset "{dataset}" not available.')
+        raise ValueError(f'Dataset "{dataset}" not recognized. Please use one of: SMD, MSL, SMAP, MYDATA, INDIVIDUALx.')
 
+    # Logging und Speicherpfade
     print(f"Training data shape: {x_train.shape}, Test data shape: {x_test.shape}")
     print(f"Number of features: {x_train.shape[1]}, Window size: {window_size}")
-    log_dir = f'{output_path}/logs'
+    log_dir = os.path.join(output_path, "logs")
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    save_path = f"{output_path}/{id}"
+    save_path = os.path.join(output_path, id)
 
     x_train = torch.from_numpy(x_train).float()
     x_test = torch.from_numpy(x_test).float()
     n_features = x_train.shape[1]
 
+    # Zielgrößen und Modellinitialisierung
     target_dims = get_target_dims(dataset)
     if target_dims is None:
         out_dim = n_features
@@ -134,14 +136,14 @@ if __name__ == "__main__":
     plot_losses(trainer.losses, save_path=save_path, plot=False)
     print("Training completed.")
 
-    # Check test loss
+    # Testen und Evaluierung
     test_loss = trainer.evaluate(test_loader)
     print("Starting evaluation on test data...")
     print(f"Test forecast loss: {test_loss[0]:.5f}")
     print(f"Test reconstruction loss: {test_loss[1]:.5f}")
     print(f"Test total loss: {test_loss[2]:.5f}")
 
-    # Some suggestions for POT args
+    # Vorschläge für Parameter
     level_q_dict = {
         "SMAP": (0.90, 0.005),
         "MSL": (0.90, 0.001),
@@ -153,20 +155,22 @@ if __name__ == "__main__":
         "INDIVIDUAL2": (0.95, 0.001),
         "INDIVIDUAL3": (0.95, 0.001),
         "INDIVIDUAL4": (0.95, 0.001),
+
     }
+    # Dynamische Unterstützung für INDIVIDUALx
+    if dataset.startswith("INDIVIDUAL"):
+        level_q_dict[dataset] = (0.95, 0.001)
+
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
-    level, q = level_q_dict[key]
-    if args.level is not None:
-        level = args.level
-    if args.q is not None:
-        q = args.q
+    level, q = level_q_dict.get(key, (0.95, 0.001))
+
 
     # Some suggestions for Epsilon args
     reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1, "MYDATA": 0, "INDIVIDUAL1":0, "INDIVIDUAL2":0, "INDIVIDUAL3":0, "INDIVIDUAL4":0}
     key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
     reg_level = reg_level_dict[key]
 
-    trainer.load(f"{save_path}/model.pt")
+    trainer.load(os.path.join(save_path, "model.pt"))
     prediction_args = {
         'dataset': dataset,
         "target_dims": target_dims,
@@ -190,7 +194,7 @@ if __name__ == "__main__":
     label = y_test[window_size:] if y_test is not None else None
     predictor.predict_anomalies(x_train, x_test, label)
 
-    # Save config
-    args_path = f"{save_path}/config.txt"
+    # Speichern der Konfiguration
+    args_path = os.path.join(save_path, "config.txt")
     with open(args_path, "w") as f:
         json.dump(args.__dict__, f, indent=2)
