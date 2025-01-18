@@ -30,7 +30,37 @@ class ForecastAnalysis:
         except Exception as e:
             print(f"Fehler beim Laden der CSV-Datei: {e}")
 
+    def map_columns_and_filter(self, standardization_params_file):
+        # Einlesen der Standardisierungsparameter
+        params = pd.read_csv(standardization_params_file)
+        features = params['feature'].tolist()
+
+        # Spalten, die gemappt werden sollen
+        forecast_columns = [col for col in self.data.columns if col.startswith("Forecast_")]
+        true_columns = [col for col in self.data.columns if col.startswith("True_")]
+
+        # Überprüfen, ob die Anzahl der Spalten übereinstimmt
+        if len(forecast_columns) != len(features) or len(true_columns) != len(features):
+            raise ValueError("Die Anzahl der Forecast- oder True-Spalten stimmt nicht mit den Features überein.")
+
+        # Mapping für Forecast- und True-Spalten erstellen
+        forecast_mapping = {col: f"{feature}_Forecast" for col, feature in zip(forecast_columns, features)}
+        true_mapping = {col: f"{feature}_True" for col, feature in zip(true_columns, features)}
+
+        # Spalten umbenennen
+        self.data.rename(columns={**forecast_mapping, **true_mapping}, inplace=True)
+
+        # Nur gemappte Forecast- und True-Spalten behalten
+        relevant_columns = list(forecast_mapping.values()) + list(true_mapping.values())
+        self.data = self.data[relevant_columns]
+
+        print("Mapping abgeschlossen und Forecast- sowie True-Spalten behalten:")
+        print("Forecast-Mapping:", forecast_mapping)
+        print("True-Mapping:", true_mapping)
+        print(f"Übrige Spalten nach dem Filtern: {list(self.data.columns)}")
+
     def destandardize_forecasts(self, standardization_params_file):
+        """Destandardisiert Forecast- und True-Werte basierend auf den Standardisierungsparametern."""
         # Einlesen der Standardisierungsparameter aus der CSV-Datei
         params = pd.read_csv(standardization_params_file)
 
@@ -38,34 +68,35 @@ class ForecastAnalysis:
         min_values = params.set_index('feature')['min'].to_dict()
         max_values = params.set_index('feature')['max'].to_dict()
 
-        # Iteriere über die Forecast-Spalten und destandardisiere sie
-        forecast_columns = [col for col in self.data.columns if 'Forecast' in col]
+        # Spalten auswählen
+        forecast_columns = [col for col in self.data.columns if '_Forecast' in col]
+        true_columns = [col for col in self.data.columns if '_True' in col]
 
-        for column in forecast_columns:
-            # Annahme: Die Spaltennamen im DataFrame entsprechen den 'feature'-Namen in der CSV
-            if column in min_values and column in max_values:
-                min_val = min_values[column]
-                max_val = max_values[column]
+        # Destandardisierung der Forecast- und True-Spalten
+        for column in forecast_columns + true_columns:
+            # Extrahieren des Feature-Namens aus dem Spaltennamen
+            feature_name = column.replace('_Forecast', '').replace('_True', '')
+
+            # Überprüfen, ob das Feature in den Standardisierungsparametern existiert
+            if feature_name in min_values and feature_name in max_values:
+                min_val = min_values[feature_name]
+                max_val = max_values[feature_name]
+
                 # Destandardisierung der jeweiligen Spalte
                 self.data[column] = self.data[column] * (max_val - min_val) + min_val
+                print(f"Destandardized {column} with min={min_val} and max={max_val}")
+
+        print("Destandardisierung abgeschlossen:")
         print(self.data.head())
+
+
+
     def save_forecast_true_csv(self):
         """Speichert Forecast und True Values in einer separaten CSV-Datei."""
-        if self.data is None:
-            print("Keine Daten geladen. Bitte lade zuerst die Daten.")
-            return
 
-        forecast_columns = [col for col in self.data.columns if col.startswith("Forecast_")]
-        true_columns = [col for col in self.data.columns if col.startswith("True_")]
 
-        if not forecast_columns or not true_columns:
-            print("Forecast- oder True-Werte-Spalten fehlen in den Daten.")
-            return
+        self.data.to_csv(os.path.join(output_dir, "forecast_true.csv"), index=False)
 
-        forecast_true_data = self.data[forecast_columns + true_columns]
-        output_path = os.path.join(self.output_dir, "forecast_true_values.csv")
-        forecast_true_data.to_csv(output_path, index=False)
-        print(f"Forecast und True Values erfolgreich gespeichert: {output_path}")
 
     def save_residuals_csv(self):
         """Berechnet und speichert Residuen in einer separaten CSV-Datei."""
@@ -144,22 +175,18 @@ class ForecastAnalysis:
 
 if __name__ == "__main__":
 
-    output_dir = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/plots/INDIVIDUAL1/l96_e10_bs32"
+    output_dir = os.path.join('plots', 'INDIVIDUAL3/l672_e10_bs32')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    pkl_file = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/output/INDIVIDUAL1/14012025_163726/test_output.pkl"
-    standard_params_file = "C:/Users/Vika/Documents/HTWG/Local_Thesis/mtad-gat-pytorch/datasets/INDIVIDUAL1/processed/INDIVIDUAL1_normalization_params.csv"
-    # Datei öffnen und als DataFrame laden
-    # with open(pkl_file, "rb") as file:
-    #     df = pickle.load(file)
-    #
-    # # Überprüfen, was geladen wurde
-    # print(df.head())  # Zeige die ersten 5 Zeilen an
-    # print(df.info())  # Informationen zum DataFrame
+    pkl_file = os.path.join("output", "INDIVIDUAL3/16012025_125843/test_output.pkl")
+    standard_params_file = os.path.join('datasets', "INDIVIDUAL3/processed/INDIVIDUAL3_normalization_params.csv")
+    # timestamps = os.path.join('datasets', "INDIVIDUAL1/processed/INDIVIDUAL1_timestamps_test.pkl")
     analyser = ForecastAnalysis(pkl_file, output_dir)
     analyser.load_pkl()
     analyser.load_csv()
-    # analyser.destandardize_forecasts(standard_params_file)
+    analyser.map_columns_and_filter(standard_params_file)
+    analyser.destandardize_forecasts(standard_params_file)
+    # analyser.add_timestamps(timestamps)
     analyser.save_forecast_true_csv()
     # analyser.save_residuals_csv()
     # analyser.plot_forecast_true()
