@@ -1,0 +1,58 @@
+[W NNPACK.cpp:61] Could not initialize NNPACK! Reason: Unsupported hardware.
+{'dataset': 'INDIVIDUAL1', 'group': '1-1', 'lookback': 4, 'normalize': False, 'spec_res': False, 'kernel_size': 7, 'use_gatv2': True, 'feat_gat_embed_dim': None, 'time_gat_embed_dim': None, 'gru_n_layers': 1, 'gru_hid_dim': 150, 'fc_n_layers': 3, 'fc_hid_dim': 150, 'recon_n_layers': 1, 'recon_hid_dim': 150, 'alpha': 0.2, 'epochs': 10, 'val_split': 0.1, 'bs': 32, 'init_lr': 0.001, 'shuffle_dataset': True, 'dropout': 0.3, 'use_cuda': False, 'print_every': 1, 'log_tensorboard': True, 'scale_scores': False, 'use_mov_av': False, 'gamma': 1, 'level': None, 'q': None, 'dynamic_pot': False, 'comment': ''}
+Loading data for dataset: INDIVIDUAL1
+Train range: 0 to None
+Test range: 0 to None
+Train set shape:  (35220, 5)
+Test set shape:  (8806, 5)
+Test set label shape:  None
+Training data shape: (35220, 5), Test data shape: (8806, 5)
+Number of features: 5, Window size: 4
+Will forecast and reconstruct all 5 input features
+train_size: 31695
+validation_size: 3521
+test_size: 8802
+Training batches: 991, Validation batches: 111, Test batches: 276
+Init total train loss: 0.792208
+Init total val loss: 0.79017
+Training model for 10 epochs..
+[Epoch 1] forecast_loss = 0.10540, recon_loss = 0.06781, total_loss = 0.17321 ---- val_forecast_loss = 0.05679, val_recon_loss = 0.02942, val_total_loss = 0.08620 [17.6s]
+[Epoch 2] forecast_loss = 0.06736, recon_loss = 0.02372, total_loss = 0.09108 ---- val_forecast_loss = 0.04648, val_recon_loss = 0.01736, val_total_loss = 0.06384 [18.1s]
+[Epoch 3] forecast_loss = 0.06276, recon_loss = 0.01577, total_loss = 0.07853 ---- val_forecast_loss = 0.04573, val_recon_loss = 0.01685, val_total_loss = 0.06258 [16.6s]
+[Epoch 4] forecast_loss = 0.06060, recon_loss = 0.01339, total_loss = 0.07399 ---- val_forecast_loss = 0.04405, val_recon_loss = 0.01309, val_total_loss = 0.05713 [17.0s]
+[Epoch 5] forecast_loss = 0.05914, recon_loss = 0.01250, total_loss = 0.07164 ---- val_forecast_loss = 0.04399, val_recon_loss = 0.01337, val_total_loss = 0.05736 [16.7s]
+[Epoch 6] forecast_loss = 0.05858, recon_loss = 0.01180, total_loss = 0.07038 ---- val_forecast_loss = 0.04345, val_recon_loss = 0.01313, val_total_loss = 0.05657 [16.6s]
+[Epoch 7] forecast_loss = 0.05819, recon_loss = 0.01121, total_loss = 0.06940 ---- val_forecast_loss = 0.04366, val_recon_loss = 0.01115, val_total_loss = 0.05481 [16.4s]
+[Epoch 8] forecast_loss = 0.05770, recon_loss = 0.01073, total_loss = 0.06843 ---- val_forecast_loss = 0.04355, val_recon_loss = 0.00961, val_total_loss = 0.05316 [16.7s]
+[Epoch 9] forecast_loss = 0.05726, recon_loss = 0.01028, total_loss = 0.06755 ---- val_forecast_loss = 0.04408, val_recon_loss = 0.01373, val_total_loss = 0.05781 [16.5s]
+[Epoch 10] forecast_loss = 0.05689, recon_loss = 0.00988, total_loss = 0.06677 ---- val_forecast_loss = 0.04464, val_recon_loss = 0.00977, val_total_loss = 0.05441 [16.6s]
+-- Training done in 168s.
+Starting training...
+Training completed.
+Starting evaluation on test data...
+Test forecast loss: 0.05359
+Test reconstruction loss: 0.01186
+Test total loss: 0.06545
+Predicting and calculating anomaly scores..
+  0%|          | 0/138 [00:00<?, ?it/s]  3%|▎         | 4/138 [00:00<00:03, 34.97it/s]  6%|▌         | 8/138 [00:00<00:03, 35.60it/s]  9%|▊         | 12/138 [00:00<00:03, 35.84it/s] 12%|█▏        | 16/138 [00:00<00:03, 37.21it/s] 14%|█▍        | 20/138 [00:00<00:03, 37.76it/s] 17%|█▋        | 24/138 [00:00<00:03, 35.94it/s] 21%|██        | 29/138 [00:00<00:02, 37.44it/s] 24%|██▍       | 33/138 [00:00<00:02, 38.04it/s] 27%|██▋       | 37/138 [00:00<00:02, 37.62it/s] 30%|███       | 42/138 [00:01<00:02, 38.54it/s] 34%|███▍      | 47/138 [00:01<00:02, 39.34it/s] 38%|███▊      | 52/138 [00:01<00:02, 39.81it/s] 41%|████      | 56/138 [00:01<00:02, 39.85it/s] 44%|████▍     | 61/138 [00:01<00:01, 40.38it/s] 48%|████▊     | 66/138 [00:01<00:01, 40.61it/s] 51%|█████▏    | 71/138 [00:01<00:01, 40.92it/s] 55%|█████▌    | 76/138 [00:01<00:01, 40.50it/s] 59%|█████▊    | 81/138 [00:02<00:01, 40.51it/s] 62%|██████▏   | 86/138 [00:02<00:01, 39.86it/s] 65%|██████▌   | 90/138 [00:02<00:01, 39.84it/s] 68%|██████▊   | 94/138 [00:02<00:01, 39.59it/s] 71%|███████   | 98/138 [00:02<00:01, 39.53it/s] 74%|███████▍  | 102/138 [00:02<00:00, 39.35it/s] 77%|███████▋  | 106/138 [00:02<00:00, 39.09it/s] 80%|███████▉  | 110/138 [00:02<00:00, 38.69it/s] 83%|████████▎ | 114/138 [00:02<00:00, 38.62it/s] 86%|████████▌ | 118/138 [00:03<00:00, 38.79it/s] 88%|████████▊ | 122/138 [00:03<00:00, 38.99it/s] 91%|█████████▏| 126/138 [00:03<00:00, 38.98it/s] 94%|█████████▍| 130/138 [00:03<00:00, 39.07it/s] 97%|█████████▋| 134/138 [00:03<00:00, 38.91it/s]100%|██████████| 138/138 [00:03<00:00, 38.87it/s]100%|██████████| 138/138 [00:03<00:00, 38.94it/s]
+Predicting and calculating anomaly scores..
+  0%|          | 0/35 [00:00<?, ?it/s] 11%|█▏        | 4/35 [00:00<00:00, 35.05it/s] 23%|██▎       | 8/35 [00:00<00:00, 35.59it/s] 34%|███▍      | 12/35 [00:00<00:00, 35.80it/s] 46%|████▌     | 16/35 [00:00<00:00, 36.19it/s] 57%|█████▋    | 20/35 [00:00<00:00, 36.98it/s] 69%|██████▊   | 24/35 [00:00<00:00, 37.68it/s] 80%|████████  | 28/35 [00:00<00:00, 38.25it/s] 91%|█████████▏| 32/35 [00:00<00:00, 38.40it/s]100%|██████████| 35/35 [00:00<00:00, 38.01it/s]
+Running POT with q=0.001, level=0.95..
+Initial threshold : 0.061203934
+Number of peaks : 1760
+Grimshaw maximum log-likelihood estimation ... [done]
+	γ = -0.015725640580058098
+	σ = 0.037435352775787266
+	L = 4049.5231976809873
+Extreme quantile (probability = 0.001): 0.20322219826897536
+  0%|          | 0/8802 [00:00<?, ?it/s]100%|██████████| 8802/8802 [00:00<00:00, 2661351.20it/s]
+0
+8802
+Results using epsilon method:
+ {'threshold': 0.1288561187684536, 'reg_level': 0}
+Results using peak-over-threshold method:
+ {'threshold': 0.20322219826897528}
+Results using best f1 score search:
+ {}
+Saving output to output/INDIVIDUAL1/18012025_145909/<train/test>_output.pkl
+-- Done.
