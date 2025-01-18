@@ -35,16 +35,12 @@ def get_data_dim(dataset):
         return 38
     elif dataset == "MYDATA":
         # Passe die Anzahl der Features deines Datensatzes an
-        return 14
-    elif dataset.startswith("INDIVIDUAL"):
-        # Dynamische Handhabung von INDIVIDUAL-Datasets
-        individual_dimensions = {
-            "INDIVIDUAL1": 5,
-            "INDIVIDUAL2": 4,
-            "INDIVIDUAL3": 4,
-            "INDIVIDUAL4": 3,
-        }
-        return individual_dimensions.get(dataset, 14)  # Standardmäßig 14 Features, falls nicht definiert
+        return 14  # Beispiel: 15 Features
+    elif dataset == "INDIVIDUAL1" : return 5
+    elif dataset == "INDIVIDUAL2":  return 4
+    elif dataset == "INDIVIDUAL3":
+        return 4
+    elif dataset == "INDIVIDUAL4": return 3
     else:
         raise ValueError("unknown dataset " + str(dataset))
 
@@ -65,8 +61,7 @@ def get_target_dims(dataset):
         return None  # Beispiel: Alle Features modellieren
     elif str(dataset).startswith("INDIVIDUAL"):
         return None
-    else:
-        raise ValueError("unknown dataset " + str(dataset))
+
 
 
 def get_data(dataset, max_train_size=None, max_test_size=None,
@@ -94,11 +89,15 @@ def get_data(dataset, max_train_size=None, max_test_size=None,
     elif dataset in ["MSL", "SMAP"]:
         prefix = os.path.join(prefix, "data", "processed")
     elif dataset == "MYDATA":
-        prefix = os.path.join(prefix, "MYDATA", "processed")
-    elif dataset.startswith("INDIVIDUAL"):
-        prefix = os.path.join(prefix, dataset, "processed")  # Dynamically access INDIVIDUAL folders
-    else:
-        raise ValueError("Unknown dataset: " + str(dataset))
+
+        prefix += "/MYDATA/processed"
+    elif dataset == "INDIVIDUAL1" :
+        prefix += "/INDIVIDUAL1/processed"
+    elif dataset == "INDIVIDUAL2":
+        prefix += "/INDIVIDUAL2/processed"
+    elif dataset == "INDIVIDUAL3":
+        prefix += "/INDIVIDUAL3/processed"
+    elif dataset == "INDIVIDUAL4" :
 
     # Define the train and test end points
     if max_train_size is None:

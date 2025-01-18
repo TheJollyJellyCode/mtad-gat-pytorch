@@ -1,0 +1,45 @@
+name: mdat-gat
+
+on:
+  workflow_dispatch: # Ermöglicht manuelles Auslösen des Workflows
+    inputs:
+      dataset:
+        description: 'Dataset for training'
+        required: true
+        default: 'INDIVIDUAL3'
+      lookback:
+        description: 'Lookback period for training'
+        required: true
+        default: '672'
+jobs:
+  mtad-gat:
+    runs-on: [self-hosted, htwg-gat] # Verwende den selbst gehosteten Runner mit dem Label HTWG_SERVER
+    timeout-minutes: 2880
+    steps:
+      # 1. Repository aktualisieren
+      - name: Pull latest changes
+        run: |
+          cd /home/viktoria/thesis/code/mtad-gat-pytorch
+          git pull
+
+      # 2. Conda-Umgebung aktivieren und Skript ausführen
+      - name: Run script in conda environment
+        run: |
+          cd /home/viktoria/thesis/code/mtad-gat-pytorch/
+          source ~/miniconda3/etc/profile.d/conda.sh
+          conda activate newenv
+          python train.py --dataset ${{ github.event.inputs.dataset }} --lookback ${{ github.event.inputs.lookback }} --normalize False --epochs 10 --bs 32 2>&1 | tee output/${{ github.event.inputs.dataset }}/logs_$(date '+%Y_%m_%d-%H_%M_%S').txt
+        continue-on-error: true
+
+
+      # 4. Änderungen pushen (z. B. Logs)
+      - name: Commit and push logs
+        run: |
+          cd /home/viktoria/thesis/code/mtad-gat-pytorch/
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add *
+          git commit -m "Add logs from workflow: run ${{ github.event.inputs.dataset }}, lag${{ github.event.inputs.lookback }}"
+          git push
+          sudo -n reboot
+

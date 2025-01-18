@@ -41,18 +41,18 @@ if __name__ == "__main__":
     elif dataset == 'MYDATA':
         output_path = os.path.join('output', 'MYDATA')
         (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("MYDATA", normalize=normalize)
-    elif dataset.startswith('INDIVIDUAL'):
-        # Dynamische Unterstützung für INDIVIDUALx
-        try:
-            individual_index = int(dataset.replace('INDIVIDUAL', ''))  # Extrahiere den Index
-            if not (0 <= individual_index <= 5):  # Gültigkeit prüfen
-                raise ValueError("INDIVIDUAL index must be between 0 and 5.")
-        except ValueError:
-            raise ValueError("Dataset must be in the format 'INDIVIDUALx', where x is a number between 0 and 5.")
-
-        dataset_name = f"INDIVIDUAL{individual_index}"
-        output_path = os.path.join('output', dataset_name)
-        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data(dataset_name, normalize=normalize)
+    elif dataset =='INDIVIDUAL1':
+        output_path = f'output/INDIVIDUAL1'
+        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("INDIVIDUAL1", normalize=normalize)
+    elif dataset =='INDIVIDUAL2':
+        output_path = f'output/INDIVIDUAL2'
+        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("INDIVIDUAL2", normalize=normalize)
+    elif dataset =='INDIVIDUAL3':
+        output_path = f'output/INDIVIDUAL3'
+        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("INDIVIDUAL3", normalize=normalize)
+    elif dataset =='INDIVIDUAL4':
+        output_path = f'output/INDIVIDUAL4'
+        (x_train, timestamps_train), (x_test, timestamps_test, y_test) = get_data("INDIVIDUAL4", normalize=normalize)
     else:
         raise ValueError(f'Dataset "{dataset}" not recognized. Please use one of: SMD, MSL, SMAP, MYDATA, INDIVIDUALx.')
 
@@ -150,7 +150,12 @@ if __name__ == "__main__":
         "SMD-1": (0.9950, 0.001),
         "SMD-2": (0.9925, 0.001),
         "SMD-3": (0.9999, 0.001),
-        "MYDATA": (0.95, 0.001),
+        "MYDATA": (0.95, 0.001),  # Beispielwerte für deinen Datensatz
+        "INDIVIDUAL1": (0.95, 0.001),
+        "INDIVIDUAL2": (0.95, 0.001),
+        "INDIVIDUAL3": (0.95, 0.001),
+        "INDIVIDUAL4": (0.95, 0.001),
+
     }
     # Dynamische Unterstützung für INDIVIDUALx
     if dataset.startswith("INDIVIDUAL"):
@@ -159,10 +164,11 @@ if __name__ == "__main__":
     key = "SMD-" + args.group[0] if args.dataset == "SMD" else args.dataset
     level, q = level_q_dict.get(key, (0.95, 0.001))
 
-    reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1, "MYDATA": 0}
-    if dataset.startswith("INDIVIDUAL"):
-        reg_level_dict[dataset] = 0
-    reg_level = reg_level_dict.get(key, 0)
+
+    # Some suggestions for Epsilon args
+    reg_level_dict = {"SMAP": 0, "MSL": 0, "SMD-1": 1, "SMD-2": 1, "SMD-3": 1, "MYDATA": 0, "INDIVIDUAL1":0, "INDIVIDUAL2":0, "INDIVIDUAL3":0, "INDIVIDUAL4":0}
+    key = "SMD-" + args.group[0] if dataset == "SMD" else dataset
+    reg_level = reg_level_dict[key]
 
     trainer.load(os.path.join(save_path, "model.pt"))
     prediction_args = {
