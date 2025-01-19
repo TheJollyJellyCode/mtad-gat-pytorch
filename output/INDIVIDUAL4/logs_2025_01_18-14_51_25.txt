@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/home/viktoria/thesis/code/mtad-gat-pytorch/train.py", line 7, in <module>
+    from utils import *
+  File "/home/viktoria/thesis/code/mtad-gat-pytorch/utils.py", line 103
+    if max_train_size is None:
+    ^
+IndentationError: expected an indented block after 'elif' statement on line 100
