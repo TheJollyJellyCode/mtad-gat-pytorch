@@ -175,11 +175,11 @@ class ForecastAnalysis:
 
 if __name__ == "__main__":
 
-    output_dir = os.path.join('plots', 'INDIVIDUAL3/l672_e10_bs32')
+    output_dir = os.path.join('plots', 'INDIVIDUAL4/l4_e10_bs32')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    pkl_file = os.path.join("output", "INDIVIDUAL3/16012025_125843/test_output.pkl")
-    standard_params_file = os.path.join('datasets', "INDIVIDUAL3/processed/INDIVIDUAL3_normalization_params.csv")
+    pkl_file = os.path.join("output", "INDIVIDUAL4/18012025_150852/test_output.pkl")
+    standard_params_file = os.path.join('datasets', "INDIVIDUAL4/processed/INDIVIDUAL4_normalization_params.csv")
     # timestamps = os.path.join('datasets', "INDIVIDUAL1/processed/INDIVIDUAL1_timestamps_test.pkl")
     analyser = ForecastAnalysis(pkl_file, output_dir)
     analyser.load_pkl()
